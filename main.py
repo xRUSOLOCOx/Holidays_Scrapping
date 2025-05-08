@@ -1,37 +1,40 @@
-## Extraccion de dias festivos Scrapping ##
+# Extracción de días festivos con FastAPI
 
-# Importar librerias necesarias:
-
-from flask import Flask, jsonify
-
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-import os
 
-# Datos del sitio web a extraer:
+# Inicializar la app
+
+app = FastAPI()
+
+# URL del sitio 
 
 URL = {"URL": "https://www.festivos.com.co/historico"}
 
-# Diccionario de meses:
+# Diccionario de meses
 
 months = {
+
     "enero": "01", "febrero": "02", "marzo": "03",
     "abril": "04", "mayo": "05", "junio": "06",
     "julio": "07", "agosto": "08", "septiembre": "09",
     "octubre": "10", "noviembre": "11", "diciembre": "12"
 }
 
-# Clase Scrapper
+
 class Scrapper:
 
     @staticmethod
+
     def extract_data(URL):
 
         fechas = []
 
-        request = requests.get(URL["URL"])
-        soup = BeautifulSoup(request.text, "html.parser")
+        response = requests.get(URL["URL"])
+        soup = BeautifulSoup(response.text, "html.parser")
 
         for row in soup.find("tbody").find_all("tr"):
 
@@ -39,18 +42,14 @@ class Scrapper:
             year = rows[0].text
             text = str(rows[1].text)
             clean_text = text.split(" de ")
-
             date = f"{clean_text[0]}/{months[clean_text[1]]}/{year}"
             fechas.append(date)
 
         return fechas
 
-# Inicializar Flask
+# Ruta de la API:
 
-app = Flask(__name__)
-
-# Ruta API
-@app.route("/festivos", methods=["GET"])
+@app.get("/festivos")
 
 def get_festivos():
 
@@ -58,17 +57,10 @@ def get_festivos():
 
         scrapper = Scrapper()
         fechas = scrapper.extract_data(URL)
-
         df = pd.DataFrame(fechas, columns=["fecha"])
 
-        return jsonify(df.to_dict(orient="records"))
-
+        return JSONResponse(content=df.to_dict(orient="records"))
+    
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# Para entorno local
-
-if __name__ == "__main__":
-    app.run(debug=False, host="0.0.0.0", port=int(os.getenv('PORT', 5000)))
-
-
+        
+        return JSONResponse(content={"error": str(e)}, status_code=500)
