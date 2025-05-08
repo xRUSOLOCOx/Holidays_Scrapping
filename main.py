@@ -1,14 +1,13 @@
-# Extracción de días festivos con FastAPI
+# Extracción de días festivos con Flask
 
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from flask import Flask, jsonify
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 
 # Inicializar la app
 
-app = FastAPI()
+app = Flask(__name__)
 
 # URL del sitio 
 
@@ -23,7 +22,6 @@ months = {
     "julio": "07", "agosto": "08", "septiembre": "09",
     "octubre": "10", "noviembre": "11", "diciembre": "12"
 }
-
 
 class Scrapper:
 
@@ -42,14 +40,15 @@ class Scrapper:
             year = rows[0].text
             text = str(rows[1].text)
             clean_text = text.split(" de ")
+
             date = f"{clean_text[0]}/{months[clean_text[1]]}/{year}"
             fechas.append(date)
 
         return fechas
 
-# Ruta de la API:
+# Ruta principal de la API
 
-@app.get("/festivos")
+@app.route('/', methods=['GET'])
 
 def get_festivos():
 
@@ -57,10 +56,11 @@ def get_festivos():
 
         scrapper = Scrapper()
         fechas = scrapper.extract_data(URL)
+
         df = pd.DataFrame(fechas, columns=["fecha"])
 
-        return JSONResponse(content=df.to_dict(orient="records"))
+        return jsonify(df.to_dict(orient="records"))
     
     except Exception as e:
-        
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+        return jsonify({"error": str(e)}), 500
