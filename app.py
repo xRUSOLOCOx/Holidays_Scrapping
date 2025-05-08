@@ -7,6 +7,7 @@ from flask import Flask, jsonify
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import os
 
 # Datos del sitio web a extraer:
 
@@ -68,6 +69,6 @@ def get_festivos():
 # Para entorno local
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False, host="0.0.0.0", port=int(os.getenv('PORT', 5000)))
 
 
